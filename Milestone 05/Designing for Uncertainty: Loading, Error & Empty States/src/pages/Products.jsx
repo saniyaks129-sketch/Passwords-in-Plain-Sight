@@ -1,33 +1,81 @@
 import React from 'react';
-import { useProducts } from '../hooks/useProducts';
-import ProductCard from '../components/ProductCard';
+import { SkeletonCard, ErrorMessage, EmptyState } from '../components/states';
 
-const Products = () => {
-  const { data: products, isLoading, error } = useProducts();
+export default function Products({ products = [], isLoading = false, error = null, refetch }) {
+  // ---------------------------------------------------------------------------
+  // TEMPORARY SCREENSHOT TOGGLES
+  // ---------------------------------------------------------------------------
+  const SHOW_LOADING = false; // Set to true for products-loading.png
+  const SHOW_ERROR = false;   // Set to true for products-error.png
+  // ---------------------------------------------------------------------------
 
-  // DELIBERATE GAP: No handling for isLoading, error, or empty data list.
+  if (SHOW_LOADING) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Products</h1>
+        <SkeletonCard count={4} />
+      </div>
+    );
+  }
+
+  if (SHOW_ERROR) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Products</h1>
+        <ErrorMessage
+          message="We couldn't load your products. Please check your connection and try again."
+          onRetry={refetch}
+        />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Products</h1>
+        <SkeletonCard count={4} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Products</h1>
+        <ErrorMessage
+          message="We couldn't load your products. Please check your connection and try again."
+          onRetry={refetch}
+        />
+      </div>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Products</h1>
+        <EmptyState
+          title="No products found"
+          message="Try adjusting your search filters or add a new product."
+          actionLabel="Refresh Products"
+          onAction={refetch}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Product Inventory</h1>
-        <div className="flex gap-2">
-            <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors">
-            Filter
-            </button>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
-            Add Product
-            </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products && products.map(product => (
-          <ProductCard key={product.id} product={product} />
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Products</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {products.map((p) => (
+          <div key={p.id} className="p-4 border rounded-lg bg-white shadow-sm">
+            <h3 className="font-bold text-lg">{p.name}</h3>
+            <p className="text-gray-600">${p.price}</p>
+          </div>
         ))}
       </div>
     </div>
   );
-};
-
-export default Products;
+}
