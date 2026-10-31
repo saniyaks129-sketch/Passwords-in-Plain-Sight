@@ -1,40 +1,31 @@
-import { Link } from 'react-router-dom'
-import { Shield } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
-/**
- * Navbar component.
- * BUG 4: Navbar ignores auth state completely.
- * It always shows the "Login" link and never shows "Logout" or the User info.
- */
-function Navbar() {
-  // ❌ BUG 4: useAuth() hook is not called here
-  // const { user, isAuthenticated, logout } = useAuth()
+export default function Navbar() {
+  const { user, logout, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
-    <nav className="bg-white border-b border-slate-200 px-6 py-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2 text-brand-600 font-bold text-xl">
-          <Shield className="w-6 h-6" />
-          <span>VaultApp</span>
-        </Link>
-        
-        <div className="flex items-center space-x-6 text-sm font-medium">
-          <Link to="/dashboard" className="text-slate-600 hover:text-brand-600 transition-colors">Dashboard</Link>
-          <Link to="/settings" className="text-slate-600 hover:text-brand-600 transition-colors">Settings</Link>
-          
-          <div className="h-6 w-px bg-slate-200 mx-2"></div>
-          
-          {/* ❌ BUG 4: Hardcoded Login link, no Logout option */}
-          <Link 
-            to="/login" 
-            className="bg-brand-50 text-brand-600 px-4 py-2 rounded-lg hover:bg-brand-100 transition-all font-semibold"
-          >
-            Login
-          </Link>
-        </div>
+    <nav className="flex items-center justify-between p-4 bg-white shadow">
+      <Link to="/" className="font-bold text-xl">VaultApp</Link>
+
+      <div className="flex items-center gap-4">
+        {isAuthenticated ? (
+          <>
+            <span className="text-gray-600 text-sm">Hi, {user?.name || 'User'}</span>
+            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/settings">Settings</Link>
+            <button onClick={handleLogout}>Logout</button>
+          </>
+        ) : (
+          <Link to="/login">Login</Link>
+        )}
       </div>
     </nav>
   )
 }
-
-export default Navbar
