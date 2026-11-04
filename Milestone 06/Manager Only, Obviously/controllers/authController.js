@@ -1,59 +1,41 @@
-import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-// @desc    Auth user & get token
-// @route   POST /api/auth/login
-export const login = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-
-  if (user && (await user.matchPassword(password))) {
-    // Gap 1 — Role missing from JWT payload
-    const token = jwt.sign(
-      { userId: user._id, email: user.email }, // ❌ missing role
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role, // role included in response but NOT in JWT
-      token
-    });
-  } else {
-    res.status(401).json({ message: 'Invalid email or password' });
-  }
+// Helper function to generate JWT token with role
+export const generateToken = (user) => {
+  return jwt.sign(
+    { userId: user._id, email: user.email, role: user.role },
+    process.env.JWT_SECRET || 'secretkey',
+    { expiresIn: '7d' }
+  );
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/signup
-export const signup = async (req, res) => {
-  const { name, email, password } = req.body;
-  const userExists = await User.findOne({ email });
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
-  if (userExists) {
-    return res.status(400).json({ message: 'User already exists' });
-  }
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials.' });
+    }
 
-  const user = await User.create({ name, email, password });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials.' });
+    }
 
-  if (user) {
-    const token = jwt.sign(
-      { userId: user._id, email: user.email }, // ❌ missing role
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token
+    const token = generateToken(user);
+    res.status(200).json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
-  } else {
-    res.status(400).json({ message: 'Invalid user data' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

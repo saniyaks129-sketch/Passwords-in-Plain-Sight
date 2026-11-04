@@ -1,11 +1,36 @@
 import express from 'express';
-import { getAllUsers, updateUserRole, getUserProfile } from '../controllers/userController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import {
+  getMyProfile,
+  getAllUsers,
+  updateUserRole,
+} from '../controllers/userController.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+import { requireRole } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', protect, getAllUsers);          // ❌ should be admin-only
-router.put('/:id/role', protect, updateUserRole); // ❌ should be admin-only
-router.get('/me', protect, getUserProfile);
+// 1. View own profile (user, manager, admin)
+router.get(
+  '/me',
+  authMiddleware,
+  requireRole('user', 'manager', 'admin'),
+  getMyProfile
+);
+
+// 2. View all users (admin only)
+router.get(
+  '/',
+  authMiddleware,
+  requireRole('admin'),
+  getAllUsers
+);
+
+// 3. Change a user's role (admin only)
+router.put(
+  '/:id/role',
+  authMiddleware,
+  requireRole('admin'),
+  updateUserRole
+);
 
 export default router;
